@@ -76,7 +76,7 @@
       // Set this to false if you want to decouple this synchronization from
       // happening inside the engine, and you would instead like to size up
       // the canvas DOM size and WebGL render target sizes yourself.
-      // config.matchWebGLToCanvasSize = false;
+      config.matchWebGLToCanvasSize = false;
 
       // If you would like all file writes inside Unity Application.persistentDataPath
       // directory to automatically persist so that the contents are remembered when
@@ -103,9 +103,32 @@
 
 
       } else {
-        // Desktop style: Render the game canvas in a window that can be maximized to fullscreen:
-        canvas.style.width = "1920px";
-        canvas.style.height = "1080px";
+        // Desktop style: Responsive auto-fit to browser window (MacBook, 1080p, 2K, 4K)
+        function resizeCanvas() {
+          var w = window.innerWidth;
+          var h = window.innerHeight;
+          var footer = document.querySelector("#unity-footer");
+          var footerH = (footer && footer.offsetHeight > 0) ? footer.offsetHeight : 38;
+          var targetW = (canvas.width && canvas.width > 0) ? canvas.width : (parseInt("1920") || 1920);
+          var targetH = (canvas.height && canvas.height > 0) ? canvas.height : (parseInt("1080") || 1080);
+          var availW = Math.min(w - 20, targetW);
+          var availH = Math.min(Math.max(200, h - footerH - 20), targetH);
+
+          var aspect = (targetW > 0 && targetH > 0) ? (targetW / targetH) : (16 / 9);
+          var renderW = availW;
+          var renderH = Math.floor(availW / aspect);
+          if (renderH > availH) {
+            renderH = availH;
+            renderW = Math.floor(availH * aspect);
+          }
+
+          canvas.style.width = renderW + "px";
+          canvas.style.height = renderH + "px";
+          if (footer) footer.style.width = renderW + "px";
+        }
+        window.addEventListener('resize', resizeCanvas);
+        new MutationObserver(resizeCanvas).observe(canvas, { attributes: true, attributeFilter: ['width', 'height'] });
+        resizeCanvas();
       }
 
       document.querySelector("#unity-loading-bar").style.display = "block";
